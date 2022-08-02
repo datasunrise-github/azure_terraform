@@ -20,7 +20,7 @@ installProduct() {
     fi
     chmod +x $DS_INSTALLER
     echo "Using binary: '$DS_INSTALLER'" >> $PREP_LOG
-    local DS_INSTALLER_CMD="./$DS_INSTALLER --target tmp install -f --no-password --no-start"
+    local DS_INSTALLER_CMD="./$DS_INSTALLER --noprogress --target tmp install -f --no-password --no-start"
     $DS_INSTALLER_CMD
     RETVAL=$?
     echo "Result of '$DS_INSTALLER_CMD' is $RETVAL" >> $PREP_LOG
@@ -37,7 +37,7 @@ installProduct() {
     ######################################################
     sed -i 's/SELINUX=enforcing/SELINUX=permissive/g' /etc/selinux/config
     setenforce 0
-    restorecon -vRF /opt/datasunrise/
+    restorecon -vRF /opt/datasunrise/ > /dev/null
     semanage port -a -t datasunrise_port_t -p tcp 11000-11010
     semanage port -a -t datasunrise_port_t -p tcp $TRG_DBPORT
     # semanage port -a -t datasunrise_port_t -p tcp $TRG_ADDITIONAL_INTERFACE_PORT

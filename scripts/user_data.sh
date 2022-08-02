@@ -2,6 +2,8 @@
 
 export PREP_LOG=/var/log/cloud-init-output.log
 echo "Configuration script has been started" >> $PREP_LOG
+yum update -y -q
+shopt -s extglob
 timedatectl set-timezone ${timeZone}
 
 export CFS_BGN_TS=$(date +%s.%N)
