@@ -69,6 +69,12 @@ write_files:
     owner: root:root
     path: /opt/cooked/ds_setup.sh
     permissions: '0750'
+  - content: |
+      ${base64encode(file("${path.module}/scripts/backup-prepare.sh"))}
+    encoding: b64
+    owner: root:root
+    path: /opt/cooked/backup-prepare.sh
+    permissions: '0750'
 EOF
   }
 
