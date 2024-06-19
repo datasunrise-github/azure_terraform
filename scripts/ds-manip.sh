@@ -1,7 +1,6 @@
 #!/bin/bash
-
 makeItMineParam() {
-	chown -R datasunrise:datasunrise "$1"
+    chown -R datasunrise:datasunrise "$1"
 }
 makeItMine() {
     chown -R datasunrise:datasunrise !(PortBinder|AppFirewallCore_Sniffer)

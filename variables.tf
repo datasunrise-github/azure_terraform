@@ -1,6 +1,15 @@
 variable "prefix" {
   type = string
   description = "Name prefix that will be used for Virtual Machine Scale Set resources"
+  validation {
+    condition = length(var.prefix) >= 5 && length(var.prefix) <= 15
+    error_message = "Name prefix must be at least 5 characters and at most 15 characters."
+  }
+
+  validation {
+    condition = can(regex("^[a-z0-9]+$", var.prefix))
+    error_message = "Name prefix must only contain lowercase characters and numbers."
+  }
 }
 
 variable "location" {
@@ -14,9 +23,19 @@ variable "admin_Username" {
   
 }
 
-variable "admin_Password" {
+variable "azure_keyvault_name" {
   type = string
-  description = "Linux VM User Password" 
+  description = "The name of the existing Key Vault where the SSH public key secret is stored"
+}
+
+variable "azure_keyvault_rg_name" {
+  type = string
+  description = "Name of the Resource Group where created Key Vault with SSH Public Key"
+}
+
+variable "ssh_key_secret_name" {
+  type = string
+  description = "Secret name containing public part of RSA key"
 }
 
 variable "roleName" {
@@ -26,7 +45,17 @@ variable "roleName" {
   
 }
 
-variable "vmSize" {
+variable "BackupStorageName" {
+  type = string
+  default = ""
+}
+
+variable "ResourceGroupStorage" {
+  type = string
+  default = ""
+}
+
+variable "vmsize" {
   type = string
   default = "Standard_D2_v2"
   description = "Size of the Virtual Machine. Depends on the Location and Availability Set"
@@ -79,7 +108,12 @@ variable "DS_Database_Type" {
 
 variable "DS_Database_PG_Version" {
   type = string
-  description = "PostgreSQL Version"
+  description = "(Optional) The version of PostgreSQL Flexible Server to use. Possible values are 11,12, 13, 14 and 15. Required when create_mode is Default."
+  default = "16"
+  validation {
+    condition     = contains(["11", "12", "13", "14", "15", "16"], var.DS_Database_PG_Version)
+    error_message = "The value of the version property of the PostgreSQL is invalid."
+  }
 }
 
 variable "DS_Database_Port" {
@@ -92,9 +126,22 @@ variable "DS_Database_Admin_Login" {
   type = string
   default = "dsuser"
   description = "Administrator login for Dictionary and Audit database servers"
-  
+  validation {
+    condition = length(var.DS_Database_Admin_Login) >= 1 && length(var.DS_Database_Admin_Login) <= 63
+    error_message = "Admin username must be at least 1 character and at most 63 characters."
+  }
+
+  validation {
+    condition = can(regex("^[a-zA-Z0-9]+$", var.DS_Database_Admin_Login))
+    error_message = "Admin username must only contain characters and numbers."
+  }
+
+  validation {
+    condition = !can(index(["azure_superuser", "azure_pg_admin", "admin", "administrator", "root", "guest", "public"], var.DS_Database_Admin_Login)) && !can(regex("^pg_", var.DS_Database_Admin_Login))
+    error_message = "Admin login name cannot be 'azure_superuser', 'azure_pg_admin', 'admin', 'administrator', 'root', 'guest', 'public' or start with 'pg_'."
+  }
 }
-   
+
 variable "DS_Database_Admin_Password" {
   type = string
   description = "Administrator password for Dictionary and Audit database servers"
@@ -119,13 +166,15 @@ variable "Dictionary_Database_Name" {
 }
 
 variable "dictionary_db_storage_size" {
-  description = "The size of the database (Mb), minimum restriction by Azure is 32768Mb"
-  default = 32768
+  description = "(Optional) The max storage allowed for the PostgreSQL Flexible Server. Possible values are 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4193280, 4194304, 8388608, 16777216 and 33553408."
+  type = string
+  default = "65536"
 }
 
 variable "audit_db_storage_size" {
-  description = "The size of the database (Mb), minimum restriction by Azure is 32768Mb"
-  default = 32768
+  description = "(Optional) The max storage allowed for the PostgreSQL Flexible Server. Possible values are 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4193280, 4194304, 8388608, 16777216 and 33553408."
+  type = string
+  default = "262144"
 }
 
 variable "audit_db_class" {
@@ -136,6 +185,15 @@ variable "audit_db_class" {
 variable "dictionary_db_class" {
   type = string
   description = "Instance class for dictionary database"
+}
+
+variable "postgresql_configurations" {
+  description = "PostgreSQL configurations to enable."
+  type        = map(string)
+  default = {
+    "pgbouncer.enabled" = "true",
+    "azure.extensions"  = "PG_TRGM"
+  }
 }
 
 variable "Target_DB_Name" {
@@ -156,12 +214,6 @@ variable "Target_DB_Host" {
 variable "Target_DB_Port" {
   type = string
   description = "Target database port. For example, 5432"
-}
-
-variable "Target_DBProxy_Port" {
-  type = number
-  description = "Target database proxy port. For example, 5433. Must be greater than the TargetDBPort"
-
 }
 
 variable "Target_DB_Login" {
