@@ -40,6 +40,7 @@ installProduct() {
     local ORACLE_HOME=/usr/lib/oracle/21/client64/lib
     echo "Setup $AF_GCNF..." >> $PREP_LOG
     echo "DS_SERVER_NAME_PREFIX=ds" | tee -a $AF_GCNF
+    echo "AF_INSTALLATION_TYPE=AZURE" | tee -a $AF_GCNF
     echo "ORACLE_HOME=$ORACLE_HOME" | tee -a $AF_GCNF
     echo "DS configuration file $AF_GCNF" >> $PREP_LOG
     cat $AF_GCNF
