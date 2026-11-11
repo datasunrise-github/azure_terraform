@@ -7,9 +7,9 @@ resource "azurerm_virtual_network" "vnet" {
 
   tags = {
     Name = "${var.prefix}-DataSunrise-VNET-Created-By-Terraform"
-  } 
+  }
 
-  depends_on = [ azurerm_resource_group.rg ]
+  depends_on = [azurerm_resource_group.rg]
 }
 
 #Create Subnet
@@ -18,9 +18,11 @@ resource "azurerm_subnet" "subnet" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.2.0/24"]
-  service_endpoints    = ["Microsoft.Sql"]
+  service_endpoint {
+    service = "Microsoft.Sql"
+  }
 
-  depends_on = [ azurerm_virtual_network.vnet ]
+  depends_on = [azurerm_virtual_network.vnet]
 
 }
 
@@ -30,6 +32,7 @@ resource "azurerm_public_ip" "public_ip" {
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   allocation_method   = "Static"
+  sku                 = "Standard"
 
   tags = {
     Name = "${var.prefix}-DataSunrise-PIP-Created-By-Terraform"
@@ -67,7 +70,7 @@ resource "azurerm_network_security_group" "nsg" {
     destination_port_range     = "22"
     destination_address_prefix = "*"
   }
-  
+
   security_rule {
     access                     = "Allow"
     direction                  = "Inbound"
@@ -88,7 +91,7 @@ resource "azurerm_network_security_group" "nsg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     source_address_prefix      = "*"
-    destination_port_range     = "${var.Target_DB_Port}"
+    destination_port_range     = var.Target_DB_Port
     destination_address_prefix = "*"
   }
 
@@ -106,8 +109,8 @@ resource "azurerm_network_security_group" "nsg" {
 
   tags = {
     Name = "${var.prefix}-DataSunrise-NSG-Created-By-Terraform"
-  } 
-  
+  }
+
 }
 
 #Create LoadBalancer with rules
@@ -115,6 +118,7 @@ resource "azurerm_lb" "loadbalancer" {
   name                = "${var.prefix}-dslb"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  sku                 = "Standard"
 
   frontend_ip_configuration {
     name                 = "PublicIPAddress"
@@ -123,12 +127,12 @@ resource "azurerm_lb" "loadbalancer" {
 
   tags = {
     Name = "${var.prefix}-DataSunrise-LoadBalancer-Created-By-Terraform"
-  } 
+  }
 }
 
 resource "azurerm_lb_backend_address_pool" "backend_lb" {
-  name                = "DSBackEndAddressPool"
-  loadbalancer_id     = azurerm_lb.loadbalancer.id
+  name            = "DSBackEndAddressPool"
+  loadbalancer_id = azurerm_lb.loadbalancer.id
 }
 
 resource "azurerm_lb_rule" "nlb_webui" {

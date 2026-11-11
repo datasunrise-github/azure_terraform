@@ -9,7 +9,7 @@ resource "azurerm_user_assigned_identity" "dsidentity" {
   }
   tags = {
     Name = "${var.prefix}-DataSunrise-Identity-Created-By-Terraform"
-  }  
+  }
 }
 
 #Create role Assignments (IAmRole)
@@ -21,11 +21,11 @@ data "azurerm_client_config" "current" {
 }
 
 resource "azurerm_role_definition" "role_defenition" {
-  name               = "${var.prefix}-custom-role-definition"
-  scope              = data.azurerm_subscription.primary.id
+  name  = "${var.prefix}-custom-role-definition"
+  scope = data.azurerm_subscription.primary.id
 
   permissions {
-    actions     = [
+    actions = [
       "Microsoft.Storage/storageAccounts/listKeys/action",
       "Microsoft.Storage/*/read",
       "Microsoft.Storage/*/write",
@@ -68,13 +68,14 @@ data "azurerm_key_vault_secret" "ssh_key" {
 
 #Create key vault secret 
 resource "azurerm_key_vault" "DS_Key_Vault" {
-  name                       = "${var.prefix}-keyvault"
-  location                   = azurerm_resource_group.rg.location
-  resource_group_name        = azurerm_resource_group.rg.name
-  tenant_id                  = data.azurerm_client_config.current.tenant_id
-  sku_name                   = "standard"
-  soft_delete_retention_days = 7
-  purge_protection_enabled   = false
+  name                            = "${var.prefix}-keyvault"
+  location                        = azurerm_resource_group.rg.location
+  resource_group_name             = azurerm_resource_group.rg.name
+  tenant_id                       = data.azurerm_client_config.current.tenant_id
+  sku_name                        = "standard"
+  rbac_authorization_enabled      = false
+  soft_delete_retention_days      = 7
+  purge_protection_enabled        = false
   enabled_for_template_deployment = true
   enabled_for_deployment          = true
 
@@ -83,9 +84,9 @@ resource "azurerm_key_vault" "DS_Key_Vault" {
     object_id = data.azurerm_client_config.current.object_id
 
     secret_permissions = [
-      "Get", 
-      "List", 
-      "Set", 
+      "Get",
+      "List",
+      "Set",
       "Delete",
       "Purge"
     ]
@@ -97,22 +98,22 @@ resource "azurerm_key_vault" "DS_Key_Vault" {
 
   tags = {
     Name = "${var.prefix}-DataSunrise-KeyVault-Created-By-Terraform"
-  } 
+  }
 }
 
 resource "azurerm_key_vault_access_policy" "ds_identity_app" {
   key_vault_id = azurerm_key_vault.DS_Key_Vault.id
   tenant_id    = azurerm_user_assigned_identity.dsidentity.tenant_id
-  object_id    = azurerm_user_assigned_identity.dsidentity.principal_id 
-  
+  object_id    = azurerm_user_assigned_identity.dsidentity.principal_id
+
   secret_permissions = [
-    "Get", 
-    "List", 
-    "Set", 
-    "Delete", 
-    "Recover", 
-    "Backup", 
-    "Restore", 
+    "Get",
+    "List",
+    "Set",
+    "Delete",
+    "Recover",
+    "Backup",
+    "Restore",
     "Purge"
   ]
   lifecycle {
